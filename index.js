@@ -36,54 +36,103 @@ app.post("/login", async (req, res) => {
 
 
 // Generate QR code
+// app.get("/generateQRCode/:ticketNumber", async (req, res) => {
+//   const ticketNumber = req.params.ticketNumber;
+
+//   try {
+//     const ticketRef = db.collection("tickets");
+//     const querySnapshot = await ticketRef.where("TicketNumber", "==", ticketNumber).get();
+
+//     if (querySnapshot.empty) {
+//       res.status(404).send("Ticket not found");
+//     } else {
+//       const ticketData = querySnapshot.docs[0].data();
+//       const {
+//         BookingTimestamp,
+//         CreatedDate,
+//         CustomerEmail,
+//         CustomerId,
+//         CustomerName,
+//         ExpiredTimestamp,
+//         IsUsed,
+//         OrderId,
+//         ProductId,
+//         ProductName,
+//         TicketNumber,
+//         VariantName,
+//         VariantType
+//       } = ticketData;
+
+//       const responseData = {
+//         BookingTimestamp,
+//         CreatedDate,
+//         CustomerEmail,
+//         CustomerId,
+//         CustomerName,
+//         ExpiredTimestamp,
+//         IsUsed,
+//         OrderId,
+//         ProductId,
+//         ProductName,
+//         TicketNumber,
+//         VariantName,
+//         VariantType
+//       };
+
+//       res.json(responseData);
+//     }
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).send("Error retrieving ticket data");
+//   }
+// });
+
 app.get("/generateQRCode/:ticketNumber", async (req, res) => {
   const ticketNumber = req.params.ticketNumber;
 
   try {
-    const ticketRef = db.collection("tickets");
-    const querySnapshot = await ticketRef.where("TicketNumber", "==", ticketNumber).get();
+    const ticketRef = db.collection("tickets").where("TicketNumber", "==", ticketNumber);
+    const querySnapshot = await ticketRef.get();
 
     if (querySnapshot.empty) {
       res.status(404).send("Ticket not found");
     } else {
       const ticketData = querySnapshot.docs[0].data();
-      const {
-        BookingTimestamp,
-        CreatedDate,
-        CustomerEmail,
-        CustomerId,
-        CustomerName,
-        ExpiredTimestamp,
-        IsUsed,
-        OrderId,
-        ProductId,
-        ProductName,
-        TicketNumber,
-        VariantName,
-        VariantType
-      } = ticketData;
 
-      const responseData = {
-        BookingTimestamp,
-        CreatedDate,
-        CustomerEmail,
-        CustomerId,
-        CustomerName,
-        ExpiredTimestamp,
-        IsUsed,
-        OrderId,
-        ProductId,
-        ProductName,
-        TicketNumber,
-        VariantName,
-        VariantType
+      // Get Data Collection Tickets
+      const qrData = {
+        BookingTimestamp: ticketData.BookingTimestamp,
+        CreatedDate: ticketData.CreatedDate,
+        CustomerEmail: ticketData.CustomerEmail,
+        CustomerId: ticketData.CustomerId,
+        CustomerName: ticketData.CustomerName,
+        ExpiredTimestamp: ticketData.ExpiredTimestamp,
+        IsUsed: ticketData.IsUsed,
+        OrderId: ticketData.OrderId,
+        ProductId: ticketData.ProductId,
+        ProductName: ticketData.ProductName,
+        TicketNumber: ticketData.TicketNumber,
+        VariantName: ticketData.VariantName,
+        VariantType: ticketData.VariantType,
       };
 
-      res.json(responseData);
+      const qrDataString = JSON.stringify(qrData);
+
+      const canvas = createCanvas(200, 200);
+      qrcode.toCanvas(canvas, qrDataString, (error) => {
+        if (error) {
+          console.error(error);
+          res.status(500).send("Error generating QR code");
+        } else {
+          const stream = canvas.createPNGStream();
+          res.type("png");
+          stream.pipe(res);
+        }
+      });
     }
   } catch (error) {
     console.error(error);
-    res.status(500).send("Error retrieving ticket data");
+    res.status(500).send("Error fetching ticket data");
   }
 });
 
