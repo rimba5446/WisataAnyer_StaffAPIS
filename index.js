@@ -146,32 +146,45 @@ app.get("/generateQRCode/:ticketNumber", async (req, res) => {
 app.post("/validateQRCode", async (req, res) => {
   const { qrData } = req.body;
 
-  const ticketData = await db.collection("tickets").where("TicketNumber", "==", qrData.TicketNumber).get();
-  if (ticketData.empty) {
+  const ticketRef = db.collection("tickets").where("TicketNumber", "==", qrData.TicketNumber);
+  const ticketSnapshot = await ticketRef.get();
+
+  if (ticketSnapshot.empty) {
     res.status(404).send("Ticket not found");
+    return;
+  }
+
+  const ticketDoc = ticketSnapshot.docs[0];
+  const ticketData = ticketDoc.data();
+
+  if (ticketData.IsUsed) {
+    res.status(400).send("Ticket already used");
+    return;
+  }
+
+  await ticketDoc.ref.update({ IsUsed: true });
+
+  const validateQuery = db.collection("ticketsvalidate").where("TicketNumber", "==", qrData.TicketNumber);
+  const validateSnapshot = await validateQuery.get();
+
+  if (validateSnapshot.empty) {
+    const validateData = {
+      Status: "Active",
+      ScanTimestamp: new Date(),
+      VisitorCount: 1,
+      ...ticketData,
+    };
+    await db.collection("ticketsvalidate").add(validateData);
+    res.json(validateData);
   } else {
-    const validatedTicket = ticketData.docs[0].data();
-
-    const validateQuery = await db.collection("ticketsvalidate").where("TicketNumber", "==", qrData.TicketNumber).get();
-
-    if (validateQuery.empty) {
-      const validateData = {
-        Status: "Active",
-        ScanTimestamp: new Date(),
-        VisitorCount: 1, 
-        ...validatedTicket,
-      };
-      await db.collection("ticketsvalidate").add(validateData);
-    } else {
-      const validateDoc = validateQuery.docs[0];
-      const validateData = validateDoc.data();
-      validateData.VisitorCount += 1;
-      await validateDoc.ref.update(validateData);
-    }
-
+    const validateDoc = validateSnapshot.docs[0];
+    const validateData = validateDoc.data();
+    validateData.VisitorCount += 1;
+    await validateDoc.ref.update(validateData);
     res.json(validateData);
   }
 });
+
 
 
 app.listen(port, () => {
