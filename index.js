@@ -15,16 +15,22 @@ const port = 3000;
 
 app.use(express.json());
 
-
-//staff login = belum bisa
 app.post("/login", async (req, res) => {
   const { passcode } = req.body;
 
   try {
-    const passcodeSnapshot = await db.collection("staffpasscode").doc(passcode.toString()).get();
+    const staffPasscodes = [];
 
-    if (passcodeSnapshot.exists) {
-      res.status(200).json({ message: "Login Succes" });
+    const passcodeSnapshot = await db.collection("staffpasscode")
+      .where("Passcode", "==", passcode)
+      .get();
+
+    if (!passcodeSnapshot.empty) {
+      passcodeSnapshot.forEach((doc) => {
+        const data = doc.data();
+        staffPasscodes.push(data);
+      });
+      res.status(200).json({ message: "Login Succes", staffPasscodes });
     } else {
       res.status(401).json({ message: "Login Failed, passcode Not valid" });
     }
