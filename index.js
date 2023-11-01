@@ -5,6 +5,7 @@ const qrcode = require("qrcode");
 const serviceAccount = require("./serviceAccountKey.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
+  ignoreUndefinedProperties: true,
 });
 
 const db = admin.firestore();
@@ -144,7 +145,7 @@ app.get("/generateQRCode/:ticketNumber", async (req, res) => {
 
 // Endpoint QR code
 app.post("/validateQRCode", async (req, res) => {
-  const { qrData } = req.body;
+  const { qrData, visitorCount } = req.body; 
 
   const ticketRef = db.collection("tickets").where("TicketNumber", "==", qrData.TicketNumber);
   const ticketSnapshot = await ticketRef.get();
@@ -171,20 +172,20 @@ app.post("/validateQRCode", async (req, res) => {
     const validateData = {
       Status: "Active",
       ScanTimestamp: new Date(),
-      VisitorCount: 1,
-      ...ticketData,
+      VisitorCount: visitorCount,
+      TicketNumber: qrData.TicketNumber,
+     // ...ticketData,
     };
     await db.collection("ticketsvalidate").add(validateData);
     res.json(validateData);
   } else {
     const validateDoc = validateSnapshot.docs[0];
     const validateData = validateDoc.data();
-    validateData.VisitorCount += 1;
+    validateData.VisitorCount += visitorCount;
     await validateDoc.ref.update(validateData);
     res.json(validateData);
   }
 });
-
 
 
 app.listen(port, () => {
