@@ -1,18 +1,24 @@
 {
   "name": "validasi_api",
   "version": "1.0.0",
-  "description": "",
+  "description": "StaffApi FireStore",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "RaykujanK13",
   "license": "ISC",
+  "engines": {
+    "node": "16.x"
+  },
   "dependencies": {
+    "body-parser": "^1.20.2",
     "canvas": "^2.11.2",
     "express": "^4.18.2",
     "firebase-admin": "^11.11.0",
-    "qrcode": "^1.5.3"
+    "qrcode": "^1.5.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0"
   }
 }

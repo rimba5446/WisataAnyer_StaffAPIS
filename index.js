@@ -1,6 +1,7 @@
 const admin = require("firebase-admin");
 const { createCanvas } = require("canvas");
 const qrcode = require("qrcode");
+const { specs, swaggerUi } = require('./swegger');
 
 const serviceAccount = require("./serviceAccountKey.json");
 admin.initializeApp({
@@ -16,6 +17,33 @@ const port = 3000;
 
 app.use(express.json());
 
+//login passcode
+
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: staff login
+ *     description: Staff login with passcode
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               passcode:
+ *                 type: string
+ *                 description: Passcode for login
+ *             required:
+ *               - passcode
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid passcode
+ *       500:
+ *         description: Server error
+ */
 app.post("/login", async (req, res) => {
   const { passcode } = req.body;
 
@@ -37,12 +65,31 @@ app.post("/login", async (req, res) => {
     }
   } catch (error) {
     console.error("Error: ", error);
-    res.status(500).json({ message: "Error Server Get Collection" });
+    res.status(500).json({ message: "Error Server Get Data Collection" });
   }
 });
 
 
 // Generate QR code
+/**
+ * @swagger
+ * /generateQRCode/{ticketNumber}:
+ *   get:
+ *     summary: Generate a QR code for a ticket
+ *     parameters:
+ *       - in: path
+ *         name: ticketNumber
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: QR code generated successfully
+ *       404:
+ *         description: Ticket not found
+ *       500:
+ *         description: Error generating QR code
+ */
 // app.get("/generateQRCode/:ticketNumber", async (req, res) => {
 //   const ticketNumber = req.params.ticketNumber;
 
@@ -144,6 +191,43 @@ app.get("/generateQRCode/:ticketNumber", async (req, res) => {
 });
 
 // Endpoint QR code
+/**
+ * @swagger
+ * /validateQRCode:
+ *   post:
+ *     summary: Validate a QR code and update validation data
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               qrData:
+ *                 type: object
+ *                 properties:
+ *                   TicketNumber:
+ *                     type: string
+ *                     description: The ticket number from the QR code
+ *                 required:
+ *                   - TicketNumber
+ *               visitorCount:
+ *                 type: integer
+ *                 description: The number of visitors to validate
+ *             required:
+ *               - qrData
+ *               - visitorCount
+ *     responses:
+ *       200:
+ *         description: QR code validated successfully
+ *       400:
+ *         description: Ticket already used
+ *       404:
+ *         description: Ticket not found
+ *       500:
+ *         description: Server error
+ */
+
+
 app.post("/validateQRCode", async (req, res) => {
   const { qrData, visitorCount } = req.body; 
 
@@ -191,6 +275,7 @@ app.post("/validateQRCode", async (req, res) => {
   }
 });
 
+app.use('/', swaggerUi.serve, swaggerUi.setup(specs));
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
