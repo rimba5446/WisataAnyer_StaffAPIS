@@ -174,6 +174,10 @@ app.post("/validateQRCode", async (req, res) => {
       ScanTimestamp: new Date(),
       VisitorCount: visitorCount,
       TicketNumber: qrData.TicketNumber,
+      CustomerName: ticketData.CustomerName,
+      ProductName: ticketData.ProductName,
+      VariantName: ticketData.VariantName,
+      VariantType: ticketData.VariantType,
      // ...ticketData,
     };
     await db.collection("ticketsvalidate").add(validateData);
